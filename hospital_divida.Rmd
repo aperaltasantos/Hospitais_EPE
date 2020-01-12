@@ -6,8 +6,20 @@ knit: (function(input_file, encoding) {
  encoding=encoding,
  output_file=file.path(dirname(input_file), out_dir, 'index.html'))})
 author: "by [Andre Peralta-santos](https://www.aperaltasantos.com/) - `r format(Sys.time(), '%d %B %Y')`"
-output: html_document
+mail: "andre.peralta.santos@gmail.com"
+linkedin: "aperaltasantos"
+twitter: "andre_peralta"
+github: "aperaltasantos"
+home: "https://www.aperaltasantos.com/"
+logo: "hospital.png"
+output:
+  epuRate::epurate:
+    toc: TRUE
+    number_sections: FALSE
+    code_folding: "hide"
 ---
+
+
 
 
 <style>
@@ -24,6 +36,12 @@ output: html_document
 <br><br>
 
 > This is a personal project to monitor the arrears of the Portuguese NHS hospitals. All the data is publicly available at the transparency portal of the Ministry of Health [Database](https://transparencia.sns.gov.pt/explore/dataset/divida-total-vencida-e-pagamentos/table/?sort=periodo) 
+
+
+
+
+
+
 
 ```{r, include=FALSE}
 knitr::opts_chunk$set(
@@ -50,3 +68,601 @@ library(RCurl)
 library(splitstackshape)
 
 ```
+
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
+# Base URL path
+base_url = "https://transparencia.sns.gov.pt/api/records/1.0/search/?dataset=divida-total-vencida-e-pagamentos&rows=-1&sort=periodo&facet=periodo&facet=regiao&facet=entidade"
+ # encode the URL with characters for each space.
+base_url <- URLencode(base_url)
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
+# Convert JSON to data frame
+data_df <- fromJSON(getURL(base_url))
+sns <- as.data.frame(data_df$records)
+
+# Convert JSON to data frame
+sns <- fromJSON(getURL(base_url))
+sns <- as.data.frame(sns$records)
+sns <- as.data.frame(sns$fields)
+```
+
+```{r}
+sns<- cSplit(sns, "localizacao_geografica", ",")
+
+sns$lat = as.numeric(gsub("[\\c(,]", "", sns$localizacao_geografica_1))
+sns$long = as.numeric(gsub("[\\),]", "", sns$localizacao_geografica_2))
+
+sns <- na.omit(sns)
+```
+
+
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
+
+sns$date <- as.Date(with(sns, paste(periodo, 1,sep="-")), "%Y-%m-%d")
+
+sns$divida_total<- sns$divida_total_fornecedores_externos/1000000
+sns$divida_ven<- sns$divida_vencida_fornecedores_externos/1000000
+sns$arrears<- sns$pagamentos_em_atraso/1000000
+
+sns <-sns %>% 
+  dplyr::group_by(date) %>% 
+  mutate(divida_total_sum=sum(divida_total),
+         divida_ven_sum=sum(divida_ven),
+         arrears_sum=sum(arrears)
+         )
+
+sns_sum<- sns %>% 
+  distinct(sns,date, .keep_all= TRUE)  %>% 
+  dplyr::select(divida_total_sum, divida_ven_sum, arrears_sum)
+
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
+sns_epe <- sns %>% filter(str_detect(entidade, "EPE"))
+sns_epe <- na.omit(sns_epe)
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
+hosp_epe <- sns_epe %>% 
+  dplyr::select(entidade) 
+  
+hosp_epe <- hosp_epe %>%  distinct(entidade)
+
+
+
+
+hosp_epe <- hosp_epe %>%
+  mutate(hospital = recode(entidade, 
+     "Centro Hospitalar Alto Ave, EPE" = "CHAA",
+     "Centro Hospitalar Barreiro/Montijo, EPE" = "CHBM",
+     "Centro Hospitalar do Barreiro - Montijo, EPE" = "CHBM",
+     "Centro Hospitalar de Leiria, EPE" = "CHL",
+     "Centro Hospitalar de Lisboa - Zona Ocidental, EPE" = "CHLO",
+     "Centro Hospitalar de Lisboa Ocidental, EPE" = "CHLO",
+     "Centro Hospitalar de Setúbal, EPE" = "CHS", 
+     "Centro Hospitalar do Baixo Vouga, EPE" = "CHBV",
+     "Centro Hospitalar do Médio Ave, EPE" = "CHMA",
+     "Centro Hospitalar Médio Ave, EPE" = "CHMA",
+     "Centro Hospitalar do Oeste, EPE" = "CHO",
+     "Centro Hospitalar e Universitário de Coimbra, EPE" = "CHUC",
+     "Centro Hospitalar de Entre o Douro e Vouga, EPE" = "CHEDV",
+     "Centro Hospitalar Entre Douro e Vouga, EPE" = "CHEDV",
+     "Centro Hospitalar Médio Tejo, EPE" = "CHMT", 
+     "Centro Hospitalar Póvoa de Varzim/Vila do Conde, EPE" = "CHPVVC",
+     "Centro Hospitalar Póvoa Varzim / Vila do Conde, EPE" = "CHPVVC",
+     
+     "Centro Hospitalar Tâmega e Sousa, EPE" = "CHTS",
+     "Centro Hospitalar do Tâmega e Sousa, EPE" = "CHTS",
+     "Centro Hospitalar Tondela-Viseu, EPE" = "CHTV",
+     "Centro Hospitalar Trás-os-Montes e Alto Douro, EPE" = "CHTMAD",
+     "Centro Hospitalar Universitário Cova da Beira, EPE" = "CHUCB",
+     "Centro Hospitalar Universitário de Lisboa Central, EPE" = "CHULC", 
+     "Centro Hospitalar Universitário de São João, EPE" = "CHUSJ",
+     "Centro Hospitalar Universitário do Algarve, EPE" = "CHUA",
+     "Centro Hospitalar Universitário do Porto, EPE" = "CHUP",
+     "Centro Hospitalar Universitário Lisboa Norte, EPE" = "CHULN",
+     "Centro Hospitalar Vila Nova de Gaia/Espinho, EPE" = "CHVNGE",
+     "Centro Hospitalar Vila Nova Gaia/Espinho, EPE" = "CHVNGE",
+     
+     "Hospital da Senhora da Oliveira Guimarães, EPE" = "HSOG", 
+     "Hospital de Magalhães Lemos, EPE" = "HML",
+     
+     "Hospital Distrital da Figueira da Foz, EPE" = "HDFF",
+     "Hospital Distrital Figueira da Foz, EPE" = "HDFF",
+     
+     "Hospital Distrital de Santarém, EPE" = "HDS",
+     "Hospital Distrital Santarém, EPE" = "HDS",
+     
+     "Hospital Espírito Santo de Évora, EPE" = "HEEE",
+     "Hospital Garcia de Orta, EPE" = "HGO",
+     "Hospital Garcia de Orta, EPE - Almada" = "HGO",
+     
+     "Hospital Professor Doutor Fernando Fonseca, EPE" = "HFF", 
+     "Hospital Santa Maria Maior, EPE" = "HSMM",
+     "Hospital Distrital S.Maria Maior, EPE - Barcelos" = "HSMM",
+     "Instituto Português Oncologia de Coimbra, EPE" = "IPO_C",
+     "Instituto Português de Oncologia de Coimbra, EPE" = "IPO_C",
+     
+     "Instituto Português Oncologia de Lisboa, EPE" = "IPO_L",
+     "Instituto Português de Oncologia de Lisboa, EPE" = "IPO_L",
+     
+     "Instituto Português Oncologia do Porto, EPE" = "IPO_P",
+     "Instituto Português de Oncologia do Porto, EPE" = "IPO_P",
+     "Unidade Local de Saúde da Guarda, EPE" = "ULS_G",
+     "Unidade Local de Saúde de Castelo Branco, EPE" = "ULS_CB", 
+     "Unidade Local de Saúde de Matosinhos, EPE" = "ULS_M",
+     
+     "Unidade Local de Saúde do Alto Minho, EPE" = "ULS_AM",
+     "Unidade Local de Saúde Alto Minho, EPE" = "ULS_AM",
+     
+     "Unidade Local de Saúde do Baixo Alentejo, EPE" = "ULS_BA",
+     "Unidade Local de Saúde do Litoral Alentejano, EPE" = "ULS_LA", 
+     "Unidade Local de Saúde do Nordeste, EPE" = "ULS_N",
+     "Unidade Local de Saúde do Norte Alentejano, EPE" = "ULS_NA"
+     )
+  ) 
+
+sns_epe<-full_join(sns_epe, hosp_epe, by = NULL, copy = FALSE)
+```
+
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
+library(lubridate)
+
+sns_epe<-sns_epe  %>% 
+  arrange(entidade, date) %>%
+  group_by(entidade)  %>%
+  mutate(arrears_lag1= lag(arrears,1),
+         montly_var=arrears-arrears_lag1,
+         montly_perc_var=(montly_var/arrears)*100
+         )
+
+sns_epe<-sns_epe  %>% 
+  arrange(entidade, date) %>%
+  group_by(entidade)  %>%
+  mutate(arrears_lag12= lag(arrears,12),
+         annual_var=arrears-arrears_lag12,
+         annual_perc_var=(annual_var/arrears)*100
+         )
+
+
+sns_epe<- sns_epe  %>% 
+  group_by(entidade)  %>%
+  mutate(y_var_perct_rank = ntile(annual_var,100),
+         m_var_perct_rank = ntile(montly_var,100))
+
+
+sns_epe$year <- as.factor(format(sns_epe$date,'%Y'))
+
+sns_epe <- sns_epe %>%
+  mutate(month_name=months(date)
+  )
+
+sns_epe<-sns_epe  %>%
+  mutate(quater = quarter(date)
+  )
+
+saveRDS(sns_epe, file = "sns_epe.rds")
+
+
+
+```
+
+
+
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
+sns_sum_m<- sns_epe  %>%
+  group_by(date)  %>%
+  summarise(arrears_m=first(arrears_sum),
+            divida_ven_m=first(divida_ven)
+  )
+
+sns_sum_m<- sns_sum_m  %>%
+  mutate(arrears_lag1= lag(arrears_m,1),
+         arrear_m_var=((arrears_m-arrears_lag1)/arrears_m)*100, # Montly variation
+         arrear_m_var1= arrears_m-arrears_lag1,
+         arrears_lag12= lag(arrears_m,12),
+         arrear_y_var1=(arrears_m-arrears_lag12),
+         arrear_y_var=((arrears_m-arrears_lag12)/arrears_m)*100 # Annual Variation
+  )
+
+
+
+sns_sum_m= mutate(sns_sum_m, 
+         percentile_rank_m = ntile(sns_sum_m$arrear_m_var,100))
+
+sns_sum_m<- sns_sum_m  %>%
+  mutate(month_name=months(date),
+         year=as.numeric(format(date,'%Y'))
+         )
+
+saveRDS(sns_sum_m, file = "sns_sum_m.rds")
+
+#readRDS(file = "sns_sum_m.rds")
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
+sns_sum_y<- sns_epe  %>%
+  group_by(year)  %>%
+  summarise(arrears_y=first(arrears_sum)
+  )
+
+sns_sum_y<- sns_sum_y  %>%
+  mutate(arrears_lag1= lag(arrears_y,1),
+         arrear_y_var=arrears_y-arrears_lag1
+  )
+
+
+```
+
+# Historical evolution of the EPE Hospitals Arrears {#text-formatting}
+***
+
+<style>
+div.blue { background-color:#e6f0ff; border-radius: 5px; padding: 20px;}
+</style>
+<div class = "blue">
+
+- October 2019 
+- Increase in 84.3 M Euros in arreaers, 11.4% increase compared with the last month
+- Centro Hospitalar Lisboa Norte, and Centro Hospitalar Coimbra are by far the hospitals with highest arrears
+
+</div>
+
+$~$
+$~$
+
+```{r, fig.align='center', fig.cap='Map of the EPE Hospitals location and arrears'}
+
+# Library
+library(leaflet)
+
+sns_map <- sns_epe %>% 
+  filter(date==as.Date("2019-10-01")) #CHANGE
+
+sns_map <- sns_map %>% 
+  mutate(arrears = round(arrears, 2),
+         montly_perc_var = round(montly_perc_var, 2))
+
+# Create a color palette with handmade bins.
+mybins <- seq(0, 150, by=25)
+mypalette <- colorBin( palette="YlOrBr", domain=sns_map$arrears, na.color="transparent", bins=mybins)
+
+# Prepare the text for the tooltip:
+mytext <- paste(
+   "Hospital: ", sns_map$entidade, "<br/>",
+   "Arrears (Millions): ", sns_map$arrears, "<br/>",
+   "Monthly var (%): ", sns_map$montly_perc_var, sep="") %>%
+  lapply(htmltools::HTML)
+
+# Final Map
+m <- leaflet(sns_map) %>% 
+  addTiles()  %>% 
+  setView( lat=39.80846, lng=-8.09883 , zoom=6) %>%
+  addProviderTiles("Esri.WorldGrayCanvas") %>%
+  addCircleMarkers(~long, ~lat, 
+    fillColor = ~mypalette(arrears), 
+    fillOpacity = 0.7, 
+    color="white", 
+    radius=8, 
+    stroke=FALSE,
+    label = mytext,
+    labelOptions = labelOptions( style = list("font-weight" = "normal", padding = "3px 8px"), 
+                                 textsize = "13px", direction = "auto")
+  ) %>%
+  addLegend( pal=mypalette, 
+             values=~arrears, 
+             opacity=0.9, 
+             title = "Arrears (million Euros)", 
+             position = "bottomright" )
+
+m 
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
+table_monthly_var<- sns_sum_m %>%
+  select(year, month_name, arrears_m, arrear_m_var1, arrear_m_var, arrear_y_var1, arrear_y_var) %>%
+  filter(year==2019) 
+```
+
+# Arrears variation  {#text-formatting}
+***
+
+
+
+$~$
+$~$
+
+
+```{r echo=FALSE,  message=FALSE, warning=FALSE}
+library(kableExtra)
+kable(table_monthly_var, 
+      caption = "Arrears variation of Portuguese E.P.E. Hospitals ", 
+      booktabs = T, 
+      digits = 1,
+      col.names = c("Year",
+                    "Month",
+                    "Total arrears",
+                    "Monthly variation",
+                    "Monthly variation (%)",
+                    "Annual variation",
+                    "Annual variation (%)"))  %>%
+kable_styling(latex_options = "striped",
+              full_width = F) %>%
+  footnote(general = "Agregated monthly and annual arrears of the Portuguese E.P.E. Hospitals") %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"))
+```
+
+$~$
+$~$
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
+table_monthly_var_top<- sns_epe %>%
+  select(year, 
+         month_name, 
+         entidade, 
+         arrears, 
+         montly_var, 
+         montly_perc_var, 
+         annual_var, 
+         annual_perc_var) %>%
+  filter(year == "2019" & month_name == "October") %>% #CHANGE
+  mutate_if(is.numeric, round, digits = 1) %>%
+    arrange(year, month_name, -montly_var)
+
+
+
+table_monthly_var_top5<- table_monthly_var_top %>%
+    arrange(year, month_name, -montly_var) %>%
+    head(n = 5)
+
+```
+
+$~$
+$~$
+
+# EPE hospitals in Arrears (Million of Euros) variation{#text-formatting}
+***
+
+
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
+library(DT)
+
+datatable(table_monthly_var_top,
+          colnames = c("Year",
+                    "Month",
+                    "Hospital",
+                    "Arrears",
+                    "Month Arrears Var",
+                    "Monthy Var (%)",
+                    "Annual Arrears Var",
+                    "Annual Var (%)"),
+          caption = 'Table: EPE Hospital arrears (Million Euros) 2019',
+          extensions = 'Buttons', 
+          options = list(
+    dom = 'Bfrtip',
+    buttons = c('copy', 'excel', 'pdf', 'print')
+    )
+  )
+```
+
+$~$
+$~$
+
+# Top 5 Arrears variation of Portuguese E.P.E. Hospitals {#text-formatting}
+***
+
+```{r echo=FALSE,  message=FALSE, warning=FALSE}
+
+kable(table_monthly_var_top5, 
+      caption = "Top 5 Arrears variation of Portuguese E.P.E. Hospitals, 2019", 
+      booktabs = T, 
+      digits = 1,
+      col.names = c("Year",
+                    "Month",
+                    "Hospital",
+                    "Arrears",
+                    "Month Arrears Var",
+                    "Monthy  Var (%)",
+                    "Annual Arrears Var",
+                    "Annual  Var (%)"))  %>%
+kable_styling(latex_options = "striped",
+              full_width = F) %>%
+  footnote(general = "Agregated monthly arrears of the Portuguese E.P.E. Hospitals")  %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"))
+```
+
+$~$
+$~$
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
+table_monthly_top10<- sns_epe %>%
+  select(year, 
+         month_name, 
+         entidade, 
+         arrears, 
+         montly_var, 
+         montly_perc_var, 
+         annual_var, 
+         annual_perc_var) %>%
+  filter(year == "2019" & month_name == "October")  ### CHANGE !!!
+
+
+
+table_monthly_top10<- table_monthly_top10 %>%
+    arrange(year, month_name, -arrears) %>%
+    head(n = 10)
+
+```
+
+
+$~$
+$~$
+
+# Top 10 EPE hospitals Arrears {#text-formatting}
+***
+
+
+$~$
+$~$
+```{r echo=FALSE,  message=FALSE, warning=FALSE}
+
+kable(table_monthly_top10,
+      caption = "Top 10  Arrears of Portuguese E.P.E. Hospitals, 2019", 
+      booktabs = T, 
+      digits = 1,
+      col.names = c("Year",
+                    "Month",
+                    "Hospital",
+                    "Arrears",
+                    "Month Arrears Var",
+                    "Monthy Arrears Var (%)",
+                    "Annual  Var",
+                    "Annual Arrears Var (%)"))  %>%
+kable_styling(latex_options = "striped",
+              full_width = F) %>%
+  footnote(general = "Monthly arrears of the Portuguese E.P.E. Hospitals")  %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"))
+```
+$~$
+$~$
+
+# Historical evolution of EPE Hospitals Arrears {#text-formatting}
+***
+
+$~$
+$~$
+```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE, fig.align="center"}
+
+p1 <- ggplot(data = sns_epe,
+            mapping = aes(x = date,
+                          y = arrears_sum,
+                          colour = year)) +
+            geom_point(alpha = 6/10) +
+  geom_smooth(method = lm, 
+              se = FALSE) +
+  geom_vline(xintercept=as.numeric(as.Date("2015-11-01")), colour="grey") + 
+  geom_text(aes(x=as.Date("2016-01-01"), 
+                label="XXI Governo",y=1000), 
+            colour="grey", 
+            angle=90, 
+            vjust = 1.2,
+            size = 3) +
+  
+  geom_vline(xintercept=as.numeric(as.Date("2019-10-01")), colour="grey") + 
+  geom_text(aes(x=as.Date("2020-01-01"), 
+                label="XXII Governo",y=1000), 
+            colour="grey", 
+            angle=90, 
+            vjust = 1.2,
+            size = 3)
+
+
+p1 +  labs(title = "E.P.E. Hospitals Arrears",
+           subtitle = "2013 - 2018",
+           color='Year (linear)',
+           y = "Arrears in Million Euros",
+           x = "Year",
+           caption = "Source: Portal da Transparencia SNS")  + 
+  theme(plot.title = element_text(hjust = 0.5), 
+        plot.subtitle = element_text(hjust = 0.5)) +
+theme_minimal() +
+theme(plot.title=element_text( face="bold", 
+                               hjust=0.5,
+                               lineheight=1.2),
+      plot.subtitle=element_text(hjust=0.5)
+      )
+```
+
+$~$
+$~$
+
+# Monthly variation of Portuguese E.P.E. Hospitals Arrears {#text-formatting}
+***
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE,  fig.align="center"}
+
+sns_sum_m$colour <- ifelse(sns_sum_m$arrear_m_var1 <= 0, "Negative","Positive")
+sns_sum_m$hjust <- ifelse(sns_sum_m$arrear_m_var1 > 0, 1.3, -0.3)
+
+p1 <- ggplot(data = sns_sum_m,
+            mapping = aes(x = date,
+                          y = arrear_m_var1,
+                          label="",
+                          hjust=hjust,
+                          na.rm = TRUE)) +
+            geom_bar(stat="identity",
+                     position="identity",
+                     aes(fill = colour))  + 
+#  geom_text(aes(y=0,colour=colour)) +
+  scale_fill_manual(values=c(Positive="#00BFC4",
+                             Negative="#F8766D"))
+
+
+
+p1 + labs(title = "Monthly variation of Portuguese E.P.E. Hospitals Arrears",
+           subtitle = "2014 - 2019",
+           y = "Arrears Monthly variation in Million Euros",
+           x = "Year",
+           caption = "Source: Portal da Transparencia SNS",
+           fill = "Arrears Var")  + 
+  theme(plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5)) +
+theme_minimal() +
+theme(plot.title=element_text( face="bold", 
+                               hjust=0.5,
+                               lineheight=1.2),
+      plot.subtitle=element_text(hjust=0.5)
+      ) 
+```
+
+$~$
+$~$
+
+# Relative contribution of each Hospital to total arrears {#text-formatting}
+***
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE, fig.align="center"}
+
+# library
+library(treemapify)
+
+tree_map_df<- sns_epe %>%
+  select(year, month_name, hospital, arrears) %>%
+  filter(year == "2019" & month_name == "October") 
+ 
+tree_map<- ggplot(tree_map_df,
+                aes(area = arrears, 
+                    fill = arrears,
+                    label = hospital)
+                ) +
+ geom_treemap() +
+  geom_treemap_text(fontface = "italic", 
+                    colour = "white", 
+                    place = "centre",
+                    grow = FALSE)
+
+tree_map +  labs(title = "E.P.E. Hospitals Arrears",
+           subtitle = "2019 last month available",
+           color='Arrears M',
+           caption = "Source: Portal da Transparencia SNS")  + 
+  theme(plot.title = element_text(hjust = 0.5), 
+        plot.subtitle = element_text(hjust = 0.5)) +
+theme_minimal() +
+theme(plot.title=element_text( face="bold", 
+                               hjust=0.5,
+                               lineheight=1.2),
+      plot.subtitle=element_text(hjust=0.5)
+      )
+```
+
+$~$
+$~$
+
+# The end {#text-formatting}
+***
