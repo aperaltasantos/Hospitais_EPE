@@ -1,0 +1,62 @@
+---
+title: "Arrears in Portuguese National Health Service Hospitals"
+knit: (function(input_file, encoding) {
+  out_dir <- 'docs';
+  rmarkdown::render(input_file,
+ encoding=encoding,
+ output_file=file.path(dirname(input_file), out_dir, 'index.html'))})
+author: "by [Andre Peralta-santos](https://www.aperaltasantos.com/) - `r format(Sys.time(), '%d %B %Y')`"
+mail: "andre.peralta.santos@gmail.com"
+linkedin: "aperaltasantos"
+twitter: "andre_peralta"
+github: "aperaltasantos"
+home: "https://www.aperaltasantos.com/"
+logo: "hospital.png"
+output:
+  epuRate::epurate:
+    toc: TRUE
+    number_sections: FALSE
+    code_folding: "hide"
+---
+
+
+<style>
+#TOC {
+  top: 1%;
+  opacity: 0.5;
+}
+#TOC:hover {
+  opacity: 1;
+}
+</style>
+
+  
+<br><br>
+
+> This is a personal project to monitor the arrears of the Portuguese NHS hospitals. All the data is publicly available at the transparency portal of the Ministry of Health [Database](https://transparencia.sns.gov.pt/explore/dataset/divida-total-vencida-e-pagamentos/table/?sort=periodo) 
+
+```{r, include=FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  warning = FALSE,
+  message = FALSE,
+  echo = FALSE,
+  eval = TRUE
+  )
+
+set.seed(1) # Set the seed is important for getting reproducible reports 
+## Clean the envorment 
+rm(list=ls())
+options(scipen=4)
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
+library(epuRate)
+library(rmarkdown)
+library(tidyverse)## Versatile package for data analysis
+library(rjson)
+library(jsonlite)
+library(RCurl)
+library(splitstackshape)
+
+```
