@@ -6,17 +6,7 @@ knit: (function(input_file, encoding) {
  encoding=encoding,
  output_file=file.path(dirname(input_file), out_dir, 'index.html'))})
 author: "by [Andre Peralta-santos](https://www.aperaltasantos.com/) - `r format(Sys.time(), '%d %B %Y')`"
-mail: "andre.peralta.santos@gmail.com"
-linkedin: "aperaltasantos"
-twitter: "andre_peralta"
-github: "aperaltasantos"
-home: "https://www.aperaltasantos.com/"
-logo: "hospital.png"
-output:
-  epuRate::epurate:
-    toc: TRUE
-    number_sections: FALSE
-    code_folding: "hide"
+output: html_document
 ---
 
 
