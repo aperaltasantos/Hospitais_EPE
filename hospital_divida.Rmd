@@ -1,11 +1,11 @@
 ---
-title: "Arrears in Portuguese National Health Service Hospitals"
+title: "Dívidas em atraso dos Hospitais EPE"
 knit: (function(input_file, encoding) {
   out_dir <- 'docs';
   rmarkdown::render(input_file,
  encoding=encoding,
  output_file=file.path(dirname(input_file), out_dir, 'index.html'))})
-author: "by [Andre Peralta-santos](https://www.aperaltasantos.com/) - `r format(Sys.time(), '%d %B %Y')`"
+author: "por [Andre Peralta-santos](https://www.aperaltasantos.com/) - `r format(Sys.time(), '%d %B %Y')`"
 mail: "andre.peralta.santos@gmail.com"
 linkedin: "aperaltasantos"
 twitter: "andre_peralta"
@@ -35,7 +35,7 @@ output:
   
 <br><br>
 
-> This is a personal project to monitor the arrears of the Portuguese NHS hospitals. All the data is publicly available at the transparency portal of the Ministry of Health [Database](https://transparencia.sns.gov.pt/explore/dataset/divida-total-vencida-e-pagamentos/table/?sort=periodo) 
+> Este e um projeto pessoal de monitorização da divida em atraso dos hospitais EPE em Portugal. Todos os dados são públicos e podem ser acedidos no Portal da Transparência do SNS. [Dados](https://transparencia.sns.gov.pt/explore/dataset/divida-total-vencida-e-pagamentos/table/?sort=periodo) 
 
 
 
@@ -299,7 +299,7 @@ sns_sum_y<- sns_sum_y  %>%
 
 ```
 
-# Historical evolution of the EPE Hospitals Arrears {#text-formatting}
+# Evolução das dívidas em atraso dos Hospitais EPE {#text-formatting}
 ***
 
 <style>
@@ -307,9 +307,9 @@ div.blue { background-color:#e6f0ff; border-radius: 5px; padding: 20px;}
 </style>
 <div class = "blue">
 
-- October 2019 
-- Increase in 84.3 M Euros in arreaers, 11.4% increase compared with the last month
-- Centro Hospitalar Lisboa Norte, and Centro Hospitalar Coimbra are by far the hospitals with highest arrears
+- Outubro de 2019
+- Aumento de 84,3 M Euros das dívidas em atraso, aumento de 11,4% em relação ao último mês
+- Centro Hospitalar Lisboa Norte e Centro Hospitalar Coimbra são de longe os hospitais com maiores dívidas em atraso
 
 </div>
 
@@ -334,16 +334,16 @@ mypalette <- colorBin( palette="YlOrBr", domain=sns_map$arrears, na.color="trans
 
 # Prepare the text for the tooltip:
 mytext <- paste(
-   "Hospital: ", sns_map$entidade, "<br/>",
-   "Arrears (Millions): ", sns_map$arrears, "<br/>",
-   "Monthly var (%): ", sns_map$montly_perc_var, sep="") %>%
+   "", sns_map$entidade, "<br/>",
+   "Dívidas (milhões): ", sns_map$arrears, "<br/>",
+   "Var mensal (%): ", sns_map$montly_perc_var, sep="") %>%
   lapply(htmltools::HTML)
 
 # Final Map
 m <- leaflet(sns_map) %>% 
   addTiles()  %>% 
-  setView( lat=39.80846, lng=-8.09883 , zoom=6) %>%
-  addProviderTiles("Esri.WorldGrayCanvas") %>%
+  setView( lat=39.80846, lng=-8.09883 , zoom=7) %>%
+  addProviderTiles("Hydda.Base") %>%
   addCircleMarkers(~long, ~lat, 
     fillColor = ~mypalette(arrears), 
     fillOpacity = 0.7, 
@@ -357,7 +357,7 @@ m <- leaflet(sns_map) %>%
   addLegend( pal=mypalette, 
              values=~arrears, 
              opacity=0.9, 
-             title = "Arrears (million Euros)", 
+             title = "Dívidas em atraso (milhões)", 
              position = "bottomright" )
 
 m 
@@ -369,11 +369,8 @@ table_monthly_var<- sns_sum_m %>%
   filter(year==2019) 
 ```
 
-# Arrears variation  {#text-formatting}
+# Variação das dívidas em atraso  {#text-formatting}
 ***
-
-
-
 $~$
 $~$
 
@@ -381,19 +378,19 @@ $~$
 ```{r echo=FALSE,  message=FALSE, warning=FALSE}
 library(kableExtra)
 kable(table_monthly_var, 
-      caption = "Arrears variation of Portuguese E.P.E. Hospitals ", 
+      caption = "Dívidas em atraso (milhões Euros) dos Hospitais E.P.E.", 
       booktabs = T, 
       digits = 1,
-      col.names = c("Year",
-                    "Month",
-                    "Total arrears",
-                    "Monthly variation",
-                    "Monthly variation (%)",
-                    "Annual variation",
-                    "Annual variation (%)"))  %>%
+      col.names = c("Ano",
+                    "Mes",
+                    "Dívidas total",
+                    "Var Mensal",
+                    "Var Mensal (%)",
+                    "Var anual",
+                    "Var anual (%)"))  %>%
 kable_styling(latex_options = "striped",
               full_width = F) %>%
-  footnote(general = "Agregated monthly and annual arrears of the Portuguese E.P.E. Hospitals") %>%
+  footnote(general = "Dívidas em atraso mensais e anuais agregados dos Hospitais E.P.E.") %>%
   kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"))
 ```
 
@@ -425,7 +422,7 @@ table_monthly_var_top5<- table_monthly_var_top %>%
 $~$
 $~$
 
-# EPE hospitals in Arrears (Million of Euros) variation{#text-formatting}
+# Hospitais da EPE em atraso (milhões de euros) {#text-formatting}
 ***
 
 
@@ -434,19 +431,19 @@ $~$
 library(DT)
 
 datatable(table_monthly_var_top,
-          colnames = c("Year",
-                    "Month",
+          colnames = c("Ano",
+                    "Mes",
                     "Hospital",
-                    "Arrears",
-                    "Month Arrears Var",
-                    "Monthy Var (%)",
-                    "Annual Arrears Var",
-                    "Annual Var (%)"),
-          caption = 'Table: EPE Hospital arrears (Million Euros) 2019',
+                    "Dívidas total",
+                    "Var Mensal",
+                    "Var Mensal (%)",
+                    "Var anual",
+                    "Var anual (%)"),
+          caption = 'Tabela: Dívidas em atraso (milhões Euros) dos Hospitais E.P.E.',
           extensions = 'Buttons', 
           options = list(
     dom = 'Bfrtip',
-    buttons = c('copy', 'excel', 'pdf', 'print')
+    buttons = c('copy', 'pdf', 'print')
     )
   )
 ```
@@ -454,32 +451,14 @@ datatable(table_monthly_var_top,
 $~$
 $~$
 
-# Top 5 Arrears variation of Portuguese E.P.E. Hospitals {#text-formatting}
+$~$
+$~$
+
+# Top 10 das Dívidas em atraso (milhões Euros) dos Hospitais E.P.E. {#text-formatting}
 ***
 
-```{r echo=FALSE,  message=FALSE, warning=FALSE}
-
-kable(table_monthly_var_top5, 
-      caption = "Top 5 Arrears variation of Portuguese E.P.E. Hospitals, 2019", 
-      booktabs = T, 
-      digits = 1,
-      col.names = c("Year",
-                    "Month",
-                    "Hospital",
-                    "Arrears",
-                    "Month Arrears Var",
-                    "Monthy  Var (%)",
-                    "Annual Arrears Var",
-                    "Annual  Var (%)"))  %>%
-kable_styling(latex_options = "striped",
-              full_width = F) %>%
-  footnote(general = "Agregated monthly arrears of the Portuguese E.P.E. Hospitals")  %>%
-  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"))
-```
-
 $~$
 $~$
-
 ```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
 table_monthly_top10<- sns_epe %>%
   select(year, 
@@ -500,39 +479,29 @@ table_monthly_top10<- table_monthly_top10 %>%
 
 ```
 
-
-$~$
-$~$
-
-# Top 10 EPE hospitals Arrears {#text-formatting}
-***
-
-
-$~$
-$~$
 ```{r echo=FALSE,  message=FALSE, warning=FALSE}
 
 kable(table_monthly_top10,
-      caption = "Top 10  Arrears of Portuguese E.P.E. Hospitals, 2019", 
+      caption = "Top 10 das Dívidas em atraso (milhões Euros) dos Hospitais E.P.E", 
       booktabs = T, 
       digits = 1,
-      col.names = c("Year",
-                    "Month",
+      col.names = c("Ano",
+                    "Mes",
                     "Hospital",
-                    "Arrears",
-                    "Month Arrears Var",
-                    "Monthy Arrears Var (%)",
-                    "Annual  Var",
-                    "Annual Arrears Var (%)"))  %>%
+                    "Dívidas total",
+                    "Var Mensal",
+                    "Var Mensal (%)",
+                    "Var anual",
+                    "Var anual (%)"))  %>%
 kable_styling(latex_options = "striped",
               full_width = F) %>%
-  footnote(general = "Monthly arrears of the Portuguese E.P.E. Hospitals")  %>%
+  footnote(general = "")  %>%
   kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"))
 ```
 $~$
 $~$
 
-# Historical evolution of EPE Hospitals Arrears {#text-formatting}
+# Evolução histórica das dívidas em atraso dos Hospitais E.P.E {#text-formatting}
 ***
 
 $~$
@@ -563,11 +532,11 @@ p1 <- ggplot(data = sns_epe,
             size = 3)
 
 
-p1 +  labs(title = "E.P.E. Hospitals Arrears",
-           subtitle = "2013 - 2018",
-           color='Year (linear)',
-           y = "Arrears in Million Euros",
-           x = "Year",
+p1 +  labs(title = "Dívidas em atraso",
+           subtitle = "2014 - 2020",
+           color='Ano (linear)',
+           y = "Dívidas em atraso (milhões Euros)",
+           x = "Ano",
            caption = "Source: Portal da Transparencia SNS")  + 
   theme(plot.title = element_text(hjust = 0.5), 
         plot.subtitle = element_text(hjust = 0.5)) +
@@ -582,7 +551,7 @@ theme(plot.title=element_text( face="bold",
 $~$
 $~$
 
-# Monthly variation of Portuguese E.P.E. Hospitals Arrears {#text-formatting}
+# Variação mensal das dívidas em atraso dos Hospitais E.P.E. {#text-formatting}
 ***
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE,  fig.align="center"}
@@ -605,10 +574,10 @@ p1 <- ggplot(data = sns_sum_m,
 
 
 
-p1 + labs(title = "Monthly variation of Portuguese E.P.E. Hospitals Arrears",
-           subtitle = "2014 - 2019",
-           y = "Arrears Monthly variation in Million Euros",
-           x = "Year",
+p1 + labs(title = "Variação mensal das dívidas em atraso dos Hospitais E.P.E.",
+           subtitle = "2014 - 2020",
+           y = "Variação mensal das dívidas em atraso (milhões Euros)",
+           x = "Ano",
            caption = "Source: Portal da Transparencia SNS",
            fill = "Arrears Var")  + 
   theme(plot.title = element_text(hjust = 0.5),
@@ -624,7 +593,7 @@ theme(plot.title=element_text( face="bold",
 $~$
 $~$
 
-# Relative contribution of each Hospital to total arrears {#text-formatting}
+# Contribuição relativa de cada hospital para o total das dívidas em atraso {#text-formatting}
 ***
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE, fig.align="center"}
@@ -647,10 +616,10 @@ tree_map<- ggplot(tree_map_df,
                     place = "centre",
                     grow = FALSE)
 
-tree_map +  labs(title = "E.P.E. Hospitals Arrears",
-           subtitle = "2019 last month available",
-           color='Arrears M',
-           caption = "Source: Portal da Transparencia SNS")  + 
+tree_map +  labs(title = "Dívidas em atraso",
+           subtitle = "último mês disponível",
+           color='Dívidas em atraso M',
+           caption = "Fonte: Portal da Transparencia SNS")  + 
   theme(plot.title = element_text(hjust = 0.5), 
         plot.subtitle = element_text(hjust = 0.5)) +
 theme_minimal() +
@@ -664,5 +633,5 @@ theme(plot.title=element_text( face="bold",
 $~$
 $~$
 
-# The end {#text-formatting}
+# Fim {#text-formatting}
 ***
