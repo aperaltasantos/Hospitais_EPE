@@ -307,10 +307,10 @@ div.blue { background-color:#e6f0ff; border-radius: 5px; padding: 20px;}
 </style>
 <div class = "blue">
 
-- Novembro de 2019
-- Aumento de 76.7 M Euros das dívidas em atraso, aumento de 9.4%% em relação ao último mês
-- O Centro Hospitalar Universitário do Porto foi o Hospital que mais aumentou a divida no mes de Novembro (+20.4 M Euros)
-- Centro Hospitalar Lisboa Norte (130 M E) e Centro Hospitalar Coimbra (118.7) são de longe os hospitais com maiores dívidas em atraso
+- Dezembro de 2019
+- Diminuição de 500M Euros das dívidas em atraso, a maior regularização de dividas em atraso desde 2014
+- O Centro Hospitalar Universitário do Porto é agora o hospital com a maior divida
+
 
 </div>
 
@@ -323,7 +323,7 @@ $~$
 library(leaflet)
 
 sns_map <- sns_epe %>% 
-  filter(date==as.Date("2019-11-01")) #CHANGE
+  filter(date==as.Date("2019-12-01")) #CHANGE
 
 sns_map <- sns_map %>% 
   mutate(arrears = round(arrears, 2),
@@ -408,7 +408,7 @@ table_monthly_var_top<- sns_epe %>%
          montly_perc_var, 
          annual_var, 
          annual_perc_var) %>%
-  filter(year == "2019" & month_name == "November") %>% #CHANGE
+  filter(year == "2019" & month_name == "December") %>% #CHANGE
   mutate_if(is.numeric, round, digits = 1) %>%
     arrange(year, month_name, -montly_var)
 
@@ -470,7 +470,7 @@ table_monthly_top10<- sns_epe %>%
          montly_perc_var, 
          annual_var, 
          annual_perc_var) %>%
-  filter(year == "2019" & month_name == "November")  ### CHANGE !!!
+  filter(year == "2019" & month_name == "December")  ### CHANGE !!!
 
 
 
@@ -604,7 +604,7 @@ library(treemapify)
 
 tree_map_df<- sns_epe %>%
   select(year, month_name, hospital, arrears) %>%
-  filter(year == "2019" & month_name == "November") 
+  filter(year == "2019" & month_name == "December") 
  
 tree_map<- ggplot(tree_map_df,
                 aes(area = arrears, 
